@@ -52,18 +52,39 @@ if (isset($_POST['atualizar_status'])) {
 }
 
 $filtro = $_GET['filtro_categoria'] ?? '';
-$sql = "SELECT * FROM chamados";
+$termoBusca = $_GET['termo'] ?? '';
+
+$sql = "SELECT * FROM chamados WHERE 1=1";
 $params = [];
 
 if ($filtro) {
-    $sql .= " WHERE categoria = ?";
+    $sql .= " AND categoria = ?";
     $params[] = $filtro;
 }
+
+if ($termoBusca) {
+    $sql .= " AND (protocolo LIKE ? OR endereco LIKE ?)";
+    $params[] = "%$termoBusca%";
+    $params[] = "%$termoBusca%";
+}
+
 $sql .= " ORDER BY data_criacao DESC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $chamados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$totalPendentes = $pdo->query("SELECT COUNT(*) FROM chamados WHERE status = 'Pendente'")->fetchColumn();
+$totalAndamento = $pdo->query("SELECT COUNT(*) FROM chamados WHERE status = 'Em Andamento'")->fetchColumn();
+$totalResolvidos = $pdo->query("SELECT COUNT(*) FROM chamados WHERE status = 'Resolvido'")->fetchColumn();
+
+$statsCategorias = $pdo->query("SELECT categoria, COUNT(*) as total FROM chamados GROUP BY categoria")->fetchAll(PDO::FETCH_ASSOC);
+$catLabels = [];
+$catData = [];
+foreach($statsCategorias as $sc) {
+    $catLabels[] = $sc['categoria'];
+    $catData[] = $sc['total'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -88,27 +109,55 @@ $chamados = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </nav>
 
     <div class="container-fluid px-4 pb-5">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card p-3 bg-white border-start border-danger border-4">
+                    <span class="text-muted small">Pendentes</span>
+                    <h3 class="fw-bold mb-0 text-danger"><?= $totalPendentes ?></h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-3 bg-white border-start border-warning border-4">
+                    <span class="text-muted small">Em Andamento</span>
+                    <h3 class="fw-bold mb-0 text-warning"><?= $totalAndamento ?></h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-3 bg-white border-start border-success border-4">
+                    <span class="text-muted small">Resolvidos</span>
+                    <h3 class="fw-bold mb-0 text-success"><?= $totalResolvidos ?></h3>
+                </div>
+            </div>
+        </div>
+
         <div class="row mb-4">
-            <div class="col-12">
+            <div class="col-lg-8 mb-3 mb-lg-0">
                 <div class="card p-3">
                     <form action="admin.php" method="GET" class="row g-3 align-items-end">
-                        <div class="col-md-4">
+                        <div class="col-md-5">
                             <label class="form-label fw-medium text-muted mb-1">Filtrar Categoria</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-funnel"></i></span>
-                                <select name="filtro_categoria" class="form-select border-start-0">
-                                    <option value="">Exibir Todos os Relatos</option>
-                                    <option value="Buraco na Via" <?= $filtro == 'Buraco na Via' ? 'selected' : '' ?>>Buraco na Via</option>
-                                    <option value="Falta de Iluminação" <?= $filtro == 'Falta de Iluminação' ? 'selected' : '' ?>>Falta de Iluminação</option>
-                                    <option value="Descarte Irregular de Lixo" <?= $filtro == 'Descarte Irregular de Lixo' ? 'selected' : '' ?>>Descarte Irregular de Lixo</option>
-                                    <option value="Sinalização Danificada" <?= $filtro == 'Sinalização Danificada' ? 'selected' : '' ?>>Sinalização Danificada</option>
-                                </select>
-                            </div>
+                            <select name="filtro_categoria" class="form-select">
+                                <option value="">Todas as Categorias</option>
+                                <option value="Buraco na Via" <?= $filtro == 'Buraco na Via' ? 'selected' : '' ?>>Buraco na Via</option>
+                                <option value="Falta de Iluminação" <?= $filtro == 'Falta de Iluminação' ? 'selected' : '' ?>>Falta de Iluminação</option>
+                                <option value="Descarte Irregular de Lixo" <?= $filtro == 'Descarte Irregular de Lixo' ? 'selected' : '' ?>>Descarte Irregular de Lixo</option>
+                                <option value="Sinalização Danificada" <?= $filtro == 'Sinalização Danificada' ? 'selected' : '' ?>>Sinalização Danificada</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-medium text-muted mb-1">Buscar Protocolo / Endereço</label>
+                            <input type="text" name="termo" class="form-control" placeholder="Digite para buscar..." value="<?= htmlspecialchars($termoBusca) ?>">
                         </div>
                         <div class="col-md-2">
-                            <button type="submit" class="btn btn-dark w-100 btn-action"><i class="bi bi-search me-2"></i>Aplicar</button>
+                            <button type="submit" class="btn btn-dark w-100 btn-action">Filtrar</button>
                         </div>
                     </form>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card p-3 text-center">
+                    <h6 class="text-muted small mb-2">Incidência por Categoria</h6>
+                    <div style="height: 120px;"><canvas id="categoriaChart"></canvas></div>
                 </div>
             </div>
         </div>
@@ -173,7 +222,6 @@ $chamados = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
-    <!-- Modal de Visualização de Imagem -->
     <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content bg-transparent border-0">
@@ -183,14 +231,14 @@ $chamados = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </button>
                 </div>
                 <div class="modal-body text-center pt-0">
-                    <img src="" id="modalImageDisplay" class="img-fluid rounded shadow-lg" alt="Evidência do Chamado" style="max-height: 80vh; border: 1px solid rgba(255,255,255,0.1);">
+                    <img src="" id="modalImageDisplay" class="img-fluid rounded shadow-lg" alt="Evidência" style="max-height: 80vh; border: 1px solid rgba(255,255,255,0.1);">
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Script necessário para o Modal funcionar -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         const imageModal = document.getElementById('imageModal');
         if (imageModal) {
@@ -200,6 +248,25 @@ $chamados = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 document.getElementById('modalImageDisplay').src = imgSrc;
             });
         }
+
+        const ctx = document.getElementById('categoriaChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: <?= json_encode($catLabels) ?>,
+                datasets: [{
+                    data: <?= json_encode($catData) ?>,
+                    backgroundColor: ['#ffd21f', '#1a1a1a', '#dc3545', '#198754']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
     </script>
 </body>
 </html>
