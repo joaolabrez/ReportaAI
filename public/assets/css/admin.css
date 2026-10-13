@@ -1,69 +1,80 @@
+:root {
+    --primary-blue: #0f172a;
+    --accent-green: #10b981;
+    --accent-green-hover: #059669;
+    --bg-light: #f8fafc;
+    --card-border: #e2e8f0;
+    --text-dark: #1e293b;
+    --text-muted: #64748b;
+}
+
 body {
-    font-family: "Poppins", sans-serif;
-    background-color: #f4f7f6;
-    color: #2b2b2b;
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
 }
+
 .login-body {
-    background-color: #1a1a1a;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
 }
+
 .login-card {
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-}
-.btn-custom {
-    background-color: #ffd21f;
-    color: #1a1a1a;
-    font-weight: 600;
-    border: none;
-    border-radius: 10px;
-    padding: 0.75rem;
-}
-.btn-custom:hover {
-    background-color: #e6bd1c;
-}
-.form-control, .form-select {
-    border-radius: 8px;
-    padding: 0.75rem;
-}
-.navbar {
-    background-color: #1a1a1a !important;
-    border-bottom: 4px solid #ffd21f;
-}
-.navbar-brand {
-    font-weight: 600;
-}
-.brand-highlight {
-    color: #ffd21f;
-}
-.card {
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-}
-.table {
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     background-color: #ffffff;
-    border-radius: 12px;
-    overflow: hidden;
 }
-.table thead th {
-    background-color: #1a1a1a;
-    color: #ffffff;
-    font-weight: 500;
+
+.brand-highlight {
+    color: var(--accent-green) !important;
+}
+
+.btn-custom {
+    background-color: var(--accent-green);
     border: none;
-    padding: 1rem;
-}
-.table tbody td {
-    padding: 1rem;
-    vertical-align: middle;
-    border-bottom: 1px solid #f0f0f0;
-}
-.btn-action {
+    color: #ffffff;
+    font-weight: 600;
     border-radius: 8px;
-    font-weight: 500;
+    transition: all 0.2s ease-in-out;
 }
+
+.btn-custom:hover {
+    background-color: var(--accent-green-hover);
+    color: #ffffff;
+}
+
+.navbar {
+    background-color: var(--primary-blue) !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+.card {
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    background-color: #ffffff;
+}
+
+.table {
+    vertical-align: middle;
+}
+
+.table thead th {
+    background-color: #f1f5f9;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--card-border);
+}
+
 .badge-custom {
-    padding: 0.5rem 0.8rem;
-    border-radius: 6px;
+    padding: 0.5em 0.8em;
     font-weight: 500;
+    border-radius: 6px;
+}
+
+.btn-action {
+    border-radius: 6px;
 }
